@@ -2,17 +2,25 @@ using Api.Endpoints.Abstractions;
 using Application.Auth.Commands.RefreshJwt;
 using Application.Auth.DTOs;
 using Cortex.Mediator;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.OpenApi;
 
 namespace Api.Endpoints.Auth;
 
 /// <summary>
-/// Maps the endpoint that exchanges refresh tokens for new JWTs.
+/// POST /api/v1/auth/refresh - Maps the endpoint that exchanges refresh tokens for new JWTs.
 /// </summary>
 public sealed class RefreshEndpoint : IEndpoint
 {
     public string GroupPrefix => AuthGroup.Prefix;
     public string GroupTag => AuthGroup.Tag;
+
+    private static readonly EndpointDescriptor Endpoint = new(
+        HttpVerb: HttpMethods.Post,
+        Route: "/refresh",
+        Name: "RefreshTokens",
+        Summary: "Rotate JWT tokens using a valid refresh token.",
+        Description: "Takes a refresh token and returns a fresh access token plus a new refresh token.");
 
     /// <summary>
     /// Registers the token refresh endpoint within the provided auth <paramref name="group"/>.
@@ -22,7 +30,7 @@ public sealed class RefreshEndpoint : IEndpoint
     {
         var configuredGroup = AuthGroup.Configure(group);
 
-        configuredGroup.MapPost("/refresh", async (RefreshRequest request, IMediator mediator, CancellationToken ct) =>
+        configuredGroup.MapPost(Endpoint.Route, async (RefreshRequest request, IMediator mediator, CancellationToken ct) =>
             {
                 var command = new RefreshJwtCommand(request.RefreshToken);
                 var response = await mediator.SendCommandAsync<RefreshJwtCommand, AuthResponseDto>(command, ct);
@@ -32,12 +40,11 @@ public sealed class RefreshEndpoint : IEndpoint
             .Produces<AuthResponseDto>()
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
-            .WithName("RefreshTokens")
+            .WithName(Endpoint.Name)
             .WithOpenApi(operation =>
             {
-                operation.Summary = "Rotate JWT tokens using a valid refresh token.";
-                operation.Description =
-                    "Takes a refresh token and returns a fresh access token plus a new refresh token.";
+                operation.Summary = Endpoint.Summary;
+                operation.Description = Endpoint.Description;
                 if (operation.Responses.TryGetValue(StatusCodes.Status200OK.ToString(), out var okResponse))
                     okResponse.Description = "Tokens successfully refreshed.";
                 if (operation.Responses.TryGetValue(StatusCodes.Status400BadRequest.ToString(), out var badRequest))

@@ -4,17 +4,25 @@ using Api.Extensions;
 using Application.Users.DTOs;
 using Application.Users.Queries.GetUserById;
 using Cortex.Mediator;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.OpenApi;
 
 namespace Api.Endpoints.Users;
 
 /// <summary>
-/// Maps the endpoint that returns a specific user's profile.
+/// GET /api/v1/users/{id:guid} - Maps the endpoint that returns a specific user's profile.
 /// </summary>
 public sealed class GetUserByIdEndpoint : IEndpoint
 {
     public string GroupPrefix => UsersGroup.Prefix;
     public string GroupTag => UsersGroup.Tag;
+
+    private static readonly EndpointDescriptor Endpoint = new(
+        HttpVerb: HttpMethods.Get,
+        Route: "/{id:guid}",
+        Name: "GetUserById",
+        Summary: "Fetch a user profile by identifier.",
+        Description: "Allows admins to fetch any user, or individuals to fetch their own profile details.");
 
     /// <summary>
     /// Registers the user lookup endpoint within the provided users <paramref name="group"/>.
@@ -24,7 +32,7 @@ public sealed class GetUserByIdEndpoint : IEndpoint
     {
         var configuredGroup = UsersGroup.Configure(group);
 
-        configuredGroup.MapGet("/{id:guid}",
+        configuredGroup.MapGet(Endpoint.Route,
                 async (Guid id, ClaimsPrincipal user, IMediator mediator, CancellationToken ct) =>
                 {
                     if (!user.TryGetUserId(out var requesterId)) return Results.Unauthorized();
@@ -40,12 +48,11 @@ public sealed class GetUserByIdEndpoint : IEndpoint
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden)
             .ProducesProblem(StatusCodes.Status404NotFound)
-            .WithName("GetUserById")
+            .WithName(Endpoint.Name)
             .WithOpenApi(operation =>
             {
-                operation.Summary = "Fetch a user profile by identifier.";
-                operation.Description =
-                    "Allows admins to fetch any user, or individuals to fetch their own profile details.";
+                operation.Summary = Endpoint.Summary;
+                operation.Description = Endpoint.Description;
                 if (operation.Responses.TryGetValue(StatusCodes.Status200OK.ToString(), out var okResponse))
                     okResponse.Description = "User profile found.";
                 if (operation.Responses.TryGetValue(StatusCodes.Status401Unauthorized.ToString(), out var unauthorized))

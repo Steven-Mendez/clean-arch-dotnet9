@@ -2,17 +2,25 @@ using Api.Endpoints.Abstractions;
 using Application.Auth.Commands.LoginUser;
 using Application.Auth.DTOs;
 using Cortex.Mediator;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.OpenApi;
 
 namespace Api.Endpoints.Auth;
 
 /// <summary>
-/// Maps the authentication endpoint responsible for user login.
+/// POST /api/v1/auth/login - Maps the authentication endpoint responsible for user login.
 /// </summary>
 public sealed class LoginEndpoint : IEndpoint
 {
     public string GroupPrefix => AuthGroup.Prefix;
     public string GroupTag => AuthGroup.Tag;
+
+    private static readonly EndpointDescriptor Endpoint = new(
+        HttpVerb: HttpMethods.Post,
+        Route: "/login",
+        Name: "LoginUser",
+        Summary: "Authenticate a user and issue JWT tokens.",
+        Description: "Accepts credentials and returns access and refresh tokens for authenticated requests.");
 
     /// <summary>
     /// Registers the login endpoint within the provided auth <paramref name="group"/>.
@@ -22,7 +30,7 @@ public sealed class LoginEndpoint : IEndpoint
     {
         var configuredGroup = AuthGroup.Configure(group);
 
-        configuredGroup.MapPost("/login", async (LoginRequest request, IMediator mediator, CancellationToken ct) =>
+        configuredGroup.MapPost(Endpoint.Route, async (LoginRequest request, IMediator mediator, CancellationToken ct) =>
             {
                 var command = new LoginUserCommand(request.Email, request.Password);
                 var response = await mediator.SendCommandAsync<LoginUserCommand, AuthResponseDto>(command, ct);
@@ -32,12 +40,11 @@ public sealed class LoginEndpoint : IEndpoint
             .Produces<AuthResponseDto>()
             .ProducesProblem(StatusCodes.Status400BadRequest)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
-            .WithName("LoginUser")
+            .WithName(Endpoint.Name)
             .WithOpenApi(operation =>
             {
-                operation.Summary = "Authenticate a user and issue JWT tokens.";
-                operation.Description =
-                    "Accepts credentials and returns access and refresh tokens for authenticated requests.";
+                operation.Summary = Endpoint.Summary;
+                operation.Description = Endpoint.Description;
                 if (operation.Responses.TryGetValue(StatusCodes.Status200OK.ToString(), out var okResponse))
                     okResponse.Description = "Authentication succeeded; tokens returned.";
                 if (operation.Responses.TryGetValue(StatusCodes.Status400BadRequest.ToString(), out var badRequest))

@@ -3,17 +3,25 @@ using Api.Endpoints.Abstractions;
 using Api.Extensions;
 using Application.Auth.Commands.Logout;
 using Cortex.Mediator;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.OpenApi;
 
 namespace Api.Endpoints.Auth;
 
 /// <summary>
-/// Maps the endpoint that revokes the caller's refresh token.
+/// POST /api/v1/auth/logout - Maps the endpoint that revokes the caller's refresh token.
 /// </summary>
 public sealed class LogoutEndpoint : IEndpoint
 {
     public string GroupPrefix => AuthGroup.Prefix;
     public string GroupTag => AuthGroup.Tag;
+
+    private static readonly EndpointDescriptor Endpoint = new(
+        HttpVerb: HttpMethods.Post,
+        Route: "/logout",
+        Name: "LogoutUser",
+        Summary: "Invalidate the caller's refresh token.",
+        Description: "Revokes the provided refresh token so it can no longer be used.");
 
     /// <summary>
     /// Registers the logout endpoint within the provided auth <paramref name="group"/>.
@@ -23,7 +31,7 @@ public sealed class LogoutEndpoint : IEndpoint
     {
         var configuredGroup = AuthGroup.Configure(group);
 
-        configuredGroup.MapPost("/logout",
+        configuredGroup.MapPost(Endpoint.Route,
                 async (ClaimsPrincipal user, LogoutRequest request, IMediator mediator, CancellationToken ct) =>
                 {
                     if (!user.TryGetUserId(out var userId)) return Results.Unauthorized();
@@ -35,11 +43,11 @@ public sealed class LogoutEndpoint : IEndpoint
             .RequireAuthorization()
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
-            .WithName("LogoutUser")
+            .WithName(Endpoint.Name)
             .WithOpenApi(operation =>
             {
-                operation.Summary = "Invalidate the caller's refresh token.";
-                operation.Description = "Revokes the provided refresh token so it can no longer be used.";
+                operation.Summary = Endpoint.Summary;
+                operation.Description = Endpoint.Description;
                 if (operation.Responses.TryGetValue(StatusCodes.Status204NoContent.ToString(), out var noContent))
                     noContent.Description = "Logout completed; refresh token revoked.";
                 if (operation.Responses.TryGetValue(StatusCodes.Status401Unauthorized.ToString(), out var unauthorized))

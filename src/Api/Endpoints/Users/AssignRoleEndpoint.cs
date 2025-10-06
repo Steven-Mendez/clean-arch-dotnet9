@@ -2,18 +2,26 @@ using System.Security.Claims;
 using Api.Endpoints.Abstractions;
 using Application.Users.Commands.AssignRole;
 using Cortex.Mediator;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OpenApi;
 
 namespace Api.Endpoints.Users;
 
 /// <summary>
-/// Maps the endpoint that assigns a role to a user.
+/// POST /api/v1/users/{id:guid}/roles - Maps the endpoint that assigns a role to a user.
 /// </summary>
 public sealed class AssignRoleEndpoint : IEndpoint
 {
     public string GroupPrefix => UsersGroup.Prefix;
     public string GroupTag => UsersGroup.Tag;
+
+    private static readonly EndpointDescriptor Endpoint = new(
+        HttpVerb: HttpMethods.Post,
+        Route: "/{id:guid}/roles",
+        Name: "AssignRole",
+        Summary: "Assign a role to a user.",
+        Description: "Restricts access to administrators to grant an additional role.");
 
     /// <summary>
     /// Registers the assign-role endpoint within the provided users <paramref name="group"/>.
@@ -23,7 +31,7 @@ public sealed class AssignRoleEndpoint : IEndpoint
     {
         var configuredGroup = UsersGroup.Configure(group);
 
-        configuredGroup.MapPost("/{id:guid}/roles",
+        configuredGroup.MapPost(Endpoint.Route,
                 async (Guid id, [FromBody] RoleMutationRequest request, ClaimsPrincipal user, IMediator mediator,
                     CancellationToken ct) =>
                 {
@@ -36,11 +44,11 @@ public sealed class AssignRoleEndpoint : IEndpoint
             .RequireAuthorization(policy => policy.RequireRole("Admin"))
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status403Forbidden)
-            .WithName("AssignRole")
+            .WithName(Endpoint.Name)
             .WithOpenApi(operation =>
             {
-                operation.Summary = "Assign a role to a user.";
-                operation.Description = "Restricts access to administrators to grant an additional role.";
+                operation.Summary = Endpoint.Summary;
+                operation.Description = Endpoint.Description;
                 if (operation.Responses.TryGetValue(StatusCodes.Status204NoContent.ToString(), out var noContent))
                     noContent.Description = "Role assigned successfully.";
                 if (operation.Responses.TryGetValue(StatusCodes.Status403Forbidden.ToString(), out var forbidden))

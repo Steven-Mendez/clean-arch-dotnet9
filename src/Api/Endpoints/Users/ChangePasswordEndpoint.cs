@@ -3,18 +3,26 @@ using Api.Endpoints.Abstractions;
 using Api.Extensions;
 using Application.Users.Commands.ChangePassword;
 using Cortex.Mediator;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OpenApi;
 
 namespace Api.Endpoints.Users;
 
 /// <summary>
-/// Maps the endpoint that updates a user's password.
+/// POST /api/v1/users/{id:guid}/password - Maps the endpoint that updates a user's password.
 /// </summary>
 public sealed class ChangePasswordEndpoint : IEndpoint
 {
     public string GroupPrefix => UsersGroup.Prefix;
     public string GroupTag => UsersGroup.Tag;
+
+    private static readonly EndpointDescriptor Endpoint = new(
+        HttpVerb: HttpMethods.Post,
+        Route: "/{id:guid}/password",
+        Name: "ChangePassword",
+        Summary: "Update a user's password.",
+        Description: "Requires the caller to own the account or be an admin. Validates the current password when provided.");
 
     /// <summary>
     /// Registers the change-password endpoint within the provided users <paramref name="group"/>.
@@ -24,7 +32,7 @@ public sealed class ChangePasswordEndpoint : IEndpoint
     {
         var configuredGroup = UsersGroup.Configure(group);
 
-        configuredGroup.MapPost("/{id:guid}/password",
+        configuredGroup.MapPost(Endpoint.Route,
                 async (Guid id, [FromBody] ChangePasswordRequest request, ClaimsPrincipal user, IMediator mediator,
                     CancellationToken ct) =>
                 {
@@ -41,12 +49,11 @@ public sealed class ChangePasswordEndpoint : IEndpoint
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden)
-            .WithName("ChangePassword")
+            .WithName(Endpoint.Name)
             .WithOpenApi(operation =>
             {
-                operation.Summary = "Update a user's password.";
-                operation.Description =
-                    "Requires the caller to own the account or be an admin. Validates the current password when provided.";
+                operation.Summary = Endpoint.Summary;
+                operation.Description = Endpoint.Description;
                 if (operation.Responses.TryGetValue(StatusCodes.Status204NoContent.ToString(), out var noContent))
                     noContent.Description = "Password updated successfully.";
                 if (operation.Responses.TryGetValue(StatusCodes.Status401Unauthorized.ToString(), out var unauthorized))

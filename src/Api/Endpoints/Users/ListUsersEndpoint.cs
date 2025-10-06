@@ -2,18 +2,26 @@ using System.Security.Claims;
 using Api.Endpoints.Abstractions;
 using Application.Users.Queries.ListUsers;
 using Cortex.Mediator;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.OpenApi;
 
 namespace Api.Endpoints.Users;
 
 /// <summary>
-/// Maps the endpoint that lists users with optional filters.
+/// GET /api/v1/users - Maps the endpoint that lists users with optional filters.
 /// </summary>
 public sealed class ListUsersEndpoint : IEndpoint
 {
     public string GroupPrefix => UsersGroup.Prefix;
     public string GroupTag => UsersGroup.Tag;
+
+    private static readonly EndpointDescriptor Endpoint = new(
+        HttpVerb: HttpMethods.Get,
+        Route: string.Empty,
+        Name: "ListUsers",
+        Summary: "List users with optional filters and pagination.",
+        Description: "Admin-only listing that supports filtering by email, role, and active status, plus pagination.");
 
     /// <summary>
     /// Registers the list-users endpoint within the provided users <paramref name="group"/>.
@@ -23,7 +31,7 @@ public sealed class ListUsersEndpoint : IEndpoint
     {
         var configuredGroup = UsersGroup.Configure(group);
 
-        configuredGroup.MapGet(string.Empty,
+        configuredGroup.MapGet(Endpoint.Route,
                 async ([AsParameters] ListUsersFilter filter, ClaimsPrincipal user, IMediator mediator,
                     CancellationToken ct) =>
                 {
@@ -36,12 +44,11 @@ public sealed class ListUsersEndpoint : IEndpoint
                 })
             .Produces<ListUsersResponse>()
             .ProducesProblem(StatusCodes.Status403Forbidden)
-            .WithName("ListUsers")
+            .WithName(Endpoint.Name)
             .WithOpenApi(operation =>
             {
-                operation.Summary = "List users with optional filters and pagination.";
-                operation.Description =
-                    "Admin-only listing that supports filtering by email, role, and active status, plus pagination.";
+                operation.Summary = Endpoint.Summary;
+                operation.Description = Endpoint.Description;
                 if (operation.Responses.TryGetValue(StatusCodes.Status200OK.ToString(), out var okResponse))
                     okResponse.Description = "Users retrieved successfully.";
                 if (operation.Responses.TryGetValue(StatusCodes.Status403Forbidden.ToString(), out var forbidden))
