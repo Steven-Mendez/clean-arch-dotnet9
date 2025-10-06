@@ -1,0 +1,52 @@
+# Build output
+bin/
+obj/
+**/bin/
+**/obj/
+out/
+
+# Visual Studio / Rider
+.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+*.csproj.user
+
+# Tooling caches
+*.rsuser
+*.psess
+*.vsp
+*.vspx
+*.pidb
+*.svclog
+
+# Logs and diagnostics
+*.log
+logs/
+clean-backend/infra_build.log
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+.env.test
+!.env.example
+
+# Package manager directories
+node_modules/
+packages/
+
+# Generated files
+**/obj/**
+**/bin/**
+*.generated.cs
+
+# OS artifacts
+.DS_Store
+Thumbs.db
+
+# Docker
+mnt/

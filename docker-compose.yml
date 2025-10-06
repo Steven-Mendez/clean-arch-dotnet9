@@ -1,0 +1,40 @@
+version: "3.9"
+services:
+  db:
+    image: postgres:16
+    restart: always
+    environment:
+      POSTGRES_DB: clean_backend
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: .
+      dockerfile: src/Api/Dockerfile
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ConnectionStrings__Postgres: Host=db;Port=5432;Database=clean_backend;Username=postgres;Password=postgres
+      Jwt__Issuer: clean-backend
+      Jwt__Audience: clean-backend
+      Jwt__Key: super_secret_key_change_me
+      Jwt__AccessTokenMinutes: 30
+      Jwt__RefreshTokenMinutes: 43200
+      Cors__AllowedOrigins__0: http://localhost:3000
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:

@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+**/TestResults/
+*.user
+*.suo
+*.swp
+.vs
+.idea
+.git
+.gitignore
+.DS_Store
