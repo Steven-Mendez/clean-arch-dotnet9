@@ -1,4 +1,5 @@
 using Api.Endpoints.Abstractions;
+using Api.Extensions;
 using Application.Auth.Commands.RegisterUser;
 using Application.Users.DTOs;
 using Cortex.Mediator;
@@ -52,6 +53,8 @@ public sealed class RegisterEndpoint : IEndpoint
                     badRequest.Description = "Validation failed for the supplied registration payload.";
                 if (operation.Responses.TryGetValue(StatusCodes.Status409Conflict.ToString(), out var conflict))
                     conflict.Description = "A user with the same email already exists.";
+
+                operation.SetRequestBodyDescription("Registration payload containing the new user's details.", required: true);
 
                 return operation;
             });

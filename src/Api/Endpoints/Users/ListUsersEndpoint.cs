@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Api.Endpoints.Abstractions;
+using Api.Extensions;
 using Application.Users.Queries.ListUsers;
 using Cortex.Mediator;
 using Microsoft.AspNetCore.Http;
@@ -53,6 +54,12 @@ public sealed class ListUsersEndpoint : IEndpoint
                     okResponse.Description = "Users retrieved successfully.";
                 if (operation.Responses.TryGetValue(StatusCodes.Status403Forbidden.ToString(), out var forbidden))
                     forbidden.Description = "Caller is not an administrator.";
+
+                operation.SetParameterDescription("email", "Optional filter that matches users whose email contains the provided text.");
+                operation.SetParameterDescription("role", "Optional filter that limits results to users assigned to the specified role.");
+                operation.SetParameterDescription("isActive", "Optional filter that returns only active or inactive users.");
+                operation.SetParameterDescription("page", "Page number starting at 1; defaults to 1 when omitted.");
+                operation.SetParameterDescription("pageSize", "Number of items per page; defaults to 20.");
 
                 return operation;
             });

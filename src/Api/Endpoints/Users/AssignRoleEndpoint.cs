@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Api.Endpoints.Abstractions;
+using Api.Extensions;
 using Application.Users.Commands.AssignRole;
 using Cortex.Mediator;
 using Microsoft.AspNetCore.Http;
@@ -53,6 +54,9 @@ public sealed class AssignRoleEndpoint : IEndpoint
                     noContent.Description = "Role assigned successfully.";
                 if (operation.Responses.TryGetValue(StatusCodes.Status403Forbidden.ToString(), out var forbidden))
                     forbidden.Description = "Caller is not authorized to manage roles.";
+
+                operation.SetParameterDescription("id", "Unique identifier of the user receiving the role.", required: true);
+                operation.SetRequestBodyDescription("Role assignment payload specifying the role to grant.", required: true);
 
                 return operation;
             });

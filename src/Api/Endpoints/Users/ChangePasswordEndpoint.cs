@@ -61,6 +61,9 @@ public sealed class ChangePasswordEndpoint : IEndpoint
                 if (operation.Responses.TryGetValue(StatusCodes.Status403Forbidden.ToString(), out var forbidden))
                     forbidden.Description = "Caller cannot modify the requested user's password.";
 
+                operation.SetParameterDescription("id", "User identifier whose password is being updated.", required: true);
+                operation.SetRequestBodyDescription("Payload containing the current (when required) and new password.", required: true);
+
                 return operation;
             });
     }

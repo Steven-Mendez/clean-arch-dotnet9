@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Api.Endpoints.Abstractions;
+using Api.Extensions;
 using Application.Users.Commands.RemoveRole;
 using Cortex.Mediator;
 using Microsoft.AspNetCore.Http;
@@ -53,6 +54,9 @@ public sealed class RemoveRoleEndpoint : IEndpoint
                     noContent.Description = "Role removed successfully.";
                 if (operation.Responses.TryGetValue(StatusCodes.Status403Forbidden.ToString(), out var forbidden))
                     forbidden.Description = "Caller is not an administrator.";
+
+                operation.SetParameterDescription("id", "Identifier of the user whose role assignment is being removed.", required: true);
+                operation.SetRequestBodyDescription("Role removal payload specifying which role to revoke.", required: true);
 
                 return operation;
             });

@@ -1,4 +1,5 @@
 using Api.Endpoints.Abstractions;
+using Api.Extensions;
 using Application.Auth.Commands.LoginUser;
 using Application.Auth.DTOs;
 using Cortex.Mediator;
@@ -51,6 +52,8 @@ public sealed class LoginEndpoint : IEndpoint
                     badRequest.Description = "Validation failed for the supplied credentials.";
                 if (operation.Responses.TryGetValue(StatusCodes.Status401Unauthorized.ToString(), out var unauthorized))
                     unauthorized.Description = "Credentials were incorrect or the account is inactive.";
+
+                operation.SetRequestBodyDescription("Login credentials used to authenticate the user.", required: true);
 
                 return operation;
             });

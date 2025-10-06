@@ -62,6 +62,8 @@ public sealed class GetUserByIdEndpoint : IEndpoint
                 if (operation.Responses.TryGetValue(StatusCodes.Status404NotFound.ToString(), out var notFound))
                     notFound.Description = "No user exists with the supplied id.";
 
+                operation.SetParameterDescription("id", "Identifier of the user whose profile is requested.", required: true);
+
                 return operation;
             });
     }

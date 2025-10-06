@@ -1,4 +1,5 @@
 using Api.Endpoints.Abstractions;
+using Api.Extensions;
 using Application.Auth.Commands.RefreshJwt;
 using Application.Auth.DTOs;
 using Cortex.Mediator;
@@ -51,6 +52,8 @@ public sealed class RefreshEndpoint : IEndpoint
                     badRequest.Description = "The refresh token payload was malformed.";
                 if (operation.Responses.TryGetValue(StatusCodes.Status401Unauthorized.ToString(), out var unauthorized))
                     unauthorized.Description = "Refresh token is invalid, revoked, or expired.";
+
+                operation.SetRequestBodyDescription("Refresh token payload used to rotate JWT tokens.", required: true);
 
                 return operation;
             });

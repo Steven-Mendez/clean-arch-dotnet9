@@ -53,6 +53,8 @@ public sealed class LogoutEndpoint : IEndpoint
                 if (operation.Responses.TryGetValue(StatusCodes.Status401Unauthorized.ToString(), out var unauthorized))
                     unauthorized.Description = "Caller is unauthenticated or the supplied token is invalid.";
 
+                operation.SetRequestBodyDescription("Refresh token payload identifying which token to revoke.", required: true);
+
                 return operation;
             });
     }

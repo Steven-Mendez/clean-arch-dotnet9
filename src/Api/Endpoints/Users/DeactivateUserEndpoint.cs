@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Api.Endpoints.Abstractions;
+using Api.Extensions;
 using Application.Users.Commands.DeactivateUser;
 using Cortex.Mediator;
 using Microsoft.AspNetCore.Http;
@@ -51,6 +52,8 @@ public sealed class DeactivateUserEndpoint : IEndpoint
                     noContent.Description = "User deactivated.";
                 if (operation.Responses.TryGetValue(StatusCodes.Status403Forbidden.ToString(), out var forbidden))
                     forbidden.Description = "Caller is not an administrator.";
+
+                operation.SetParameterDescription("id", "Identifier of the user account to deactivate.", required: true);
 
                 return operation;
             });
