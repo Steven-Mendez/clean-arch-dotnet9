@@ -4,14 +4,22 @@ using Api.Extensions;
 using Application.Users.Commands.ChangePassword;
 using Cortex.Mediator;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OpenApi;
 
 namespace Api.Endpoints.Users;
 
+/// <summary>
+/// Maps the endpoint that updates a user's password.
+/// </summary>
 public sealed class ChangePasswordEndpoint : IEndpoint
 {
     public string GroupPrefix => UsersGroup.Prefix;
     public string GroupTag => UsersGroup.Tag;
 
+    /// <summary>
+    /// Registers the change-password endpoint within the provided users <paramref name="group"/>.
+    /// </summary>
+    /// <param name="group">The route group to which the change-password route is added.</param>
     public void MapEndpoint(RouteGroupBuilder group)
     {
         var configuredGroup = UsersGroup.Configure(group);
@@ -33,8 +41,27 @@ public sealed class ChangePasswordEndpoint : IEndpoint
             .Produces(StatusCodes.Status204NoContent)
             .ProducesProblem(StatusCodes.Status401Unauthorized)
             .ProducesProblem(StatusCodes.Status403Forbidden)
-            .WithName("ChangePassword");
+            .WithName("ChangePassword")
+            .WithOpenApi(operation =>
+            {
+                operation.Summary = "Update a user's password.";
+                operation.Description =
+                    "Requires the caller to own the account or be an admin. Validates the current password when provided.";
+                if (operation.Responses.TryGetValue(StatusCodes.Status204NoContent.ToString(), out var noContent))
+                    noContent.Description = "Password updated successfully.";
+                if (operation.Responses.TryGetValue(StatusCodes.Status401Unauthorized.ToString(), out var unauthorized))
+                    unauthorized.Description = "Caller is unauthenticated.";
+                if (operation.Responses.TryGetValue(StatusCodes.Status403Forbidden.ToString(), out var forbidden))
+                    forbidden.Description = "Caller cannot modify the requested user's password.";
+
+                return operation;
+            });
     }
 
+    /// <summary>
+    /// Request payload used to change a user's password.
+    /// </summary>
+    /// <param name="CurrentPassword">The caller's current password; optional for admins.</param>
+    /// <param name="NewPassword">The desired new password.</param>
     private sealed record ChangePasswordRequest(string? CurrentPassword, string NewPassword);
 }

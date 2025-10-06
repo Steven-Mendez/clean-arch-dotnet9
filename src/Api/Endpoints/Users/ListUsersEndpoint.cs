@@ -3,14 +3,22 @@ using Api.Endpoints.Abstractions;
 using Application.Users.Queries.ListUsers;
 using Cortex.Mediator;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.OpenApi;
 
 namespace Api.Endpoints.Users;
 
+/// <summary>
+/// Maps the endpoint that lists users with optional filters.
+/// </summary>
 public sealed class ListUsersEndpoint : IEndpoint
 {
     public string GroupPrefix => UsersGroup.Prefix;
     public string GroupTag => UsersGroup.Tag;
 
+    /// <summary>
+    /// Registers the list-users endpoint within the provided users <paramref name="group"/>.
+    /// </summary>
+    /// <param name="group">The route group to which the list-users route is added.</param>
     public void MapEndpoint(RouteGroupBuilder group)
     {
         var configuredGroup = UsersGroup.Configure(group);
@@ -28,10 +36,30 @@ public sealed class ListUsersEndpoint : IEndpoint
                 })
             .Produces<ListUsersResponse>()
             .ProducesProblem(StatusCodes.Status403Forbidden)
-            .WithName("ListUsers");
+            .WithName("ListUsers")
+            .WithOpenApi(operation =>
+            {
+                operation.Summary = "List users with optional filters and pagination.";
+                operation.Description =
+                    "Admin-only listing that supports filtering by email, role, and active status, plus pagination.";
+                if (operation.Responses.TryGetValue(StatusCodes.Status200OK.ToString(), out var okResponse))
+                    okResponse.Description = "Users retrieved successfully.";
+                if (operation.Responses.TryGetValue(StatusCodes.Status403Forbidden.ToString(), out var forbidden))
+                    forbidden.Description = "Caller is not an administrator.";
+
+                return operation;
+            });
     }
 }
 
+/// <summary>
+/// Query parameters supported by the user listing endpoint.
+/// </summary>
+/// <param name="Email">Filter users whose email contains the provided value.</param>
+/// <param name="Role">Filter users assigned to the specified role.</param>
+/// <param name="IsActive">Filter users by active status.</param>
+/// <param name="Page">Page number starting at 1.</param>
+/// <param name="PageSize">Number of results per page.</param>
 public sealed record ListUsersFilter(
     [FromQuery(Name = "email")] string? Email,
     [FromQuery(Name = "role")] string? Role,

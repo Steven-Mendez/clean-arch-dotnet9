@@ -112,6 +112,10 @@ builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(options =>
 {
+    var xmlFile = $"{typeof(Program).Assembly.GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath)) options.IncludeXmlComments(xmlPath, includeControllerXmlComments: true);
+
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "Clean Backend API", Version = "v1" });
     var securityScheme = new OpenApiSecurityScheme
     {
