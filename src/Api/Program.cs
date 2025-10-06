@@ -13,6 +13,7 @@ using Infrastructure.Persistence;
 using Mapster;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
@@ -151,7 +152,10 @@ builder.Services.AddSwaggerGen(options =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+var applyMigrations = builder.Configuration.GetValue<bool?>("Database:ApplyMigrationsOnStartup")
+                      ?? app.Environment.IsDevelopment();
+
+if (applyMigrations)
 {
     await using var scope = app.Services.CreateAsyncScope();
     var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
